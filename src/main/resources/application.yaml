@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: Car Auction
+  profiles:
+    active: dev
+
+application:
+  security:
+    jwt:
+      secret-key: ${JWT_SECRET}
+      expiration: ${JWT_EXPIRATION}

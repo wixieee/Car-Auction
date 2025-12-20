@@ -3,10 +3,13 @@ package edu.lpnu.auction.service;
 import edu.lpnu.auction.dto.LoginRequest;
 import edu.lpnu.auction.dto.RegisterRequest;
 import edu.lpnu.auction.model.User;
+import edu.lpnu.auction.model.enums.AuthProvider;
 import edu.lpnu.auction.model.enums.Role;
 import edu.lpnu.auction.utils.exception.types.AlreadyExistsException;
 import edu.lpnu.auction.repository.UserRepository;
+import edu.lpnu.auction.utils.exception.types.NotFoundException;
 import edu.lpnu.auction.utils.exception.types.PasswordMismatchException;
+import edu.lpnu.auction.utils.exception.types.WrongProviderException;
 import edu.lpnu.auction.utils.mapper.UserMapper;
 import edu.lpnu.auction.utils.security.JWTUtils;
 import lombok.RequiredArgsConstructor;
@@ -17,8 +20,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.time.Period;
 import java.util.Objects;
 
 @Service
@@ -36,10 +37,6 @@ public class AuthService {
              throw new AlreadyExistsException("Користувач з таким email уже існує");
          }
 
-        if(Period.between(registerRequest.getBirthDate(), LocalDate.now()).getYears() < 18) {
-            throw new IllegalArgumentException("Вам має бути щонайменше 18 років");
-        }
-
         if(!Objects.equals(registerRequest.getPassword(), registerRequest.getPasswordConfirm())) {
             throw new PasswordMismatchException("Паролі не співпадають");
         }
@@ -47,12 +44,20 @@ public class AuthService {
         User user = userMapper.toEntity(registerRequest);
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
         user.addRole(Role.ROLE_USER);
+        user.setProvider(AuthProvider.LOCAL);
         userRepository.save(user);
 
         return generateToken(registerRequest.getEmail());
     }
 
     public String login(LoginRequest loginRequest) {
+        User user = userRepository.findByEmail(loginRequest.getEmail())
+                        .orElseThrow(() -> new NotFoundException("Користувача не знайдено"));
+
+        if(user.getProvider().equals(AuthProvider.GOOGLE)) {
+            throw new WrongProviderException("Цей акаунт зареєстровано через Google. Будь ласка, увійдіть за допомогою Google");
+        }
+
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword())
         );

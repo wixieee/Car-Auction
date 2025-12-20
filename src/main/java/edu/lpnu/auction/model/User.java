@@ -1,5 +1,6 @@
 package edu.lpnu.auction.model;
 
+import edu.lpnu.auction.model.enums.AuthProvider;
 import edu.lpnu.auction.model.enums.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -7,8 +8,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.proxy.HibernateProxy;
-
-import java.time.LocalDate;
 
 import java.util.HashSet;
 import java.util.Objects;
@@ -25,15 +24,10 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
     private String firstName;
-    @Column(nullable = false)
     private String lastName;
-    @Column(nullable = false)
-    private LocalDate birthDate;
     @Column(nullable = false, unique = true)
     private String email;
-    @Column(nullable = false)
     private String password;
 
     @ElementCollection(fetch = FetchType.EAGER)
@@ -44,6 +38,10 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(name = "role")
     private Set<Role> roles = new HashSet<>();
+
+    @Enumerated(EnumType.STRING)
+    private AuthProvider provider;
+    private String providerId;
 
     public void addRole(Role role){
         this.roles.add(role);

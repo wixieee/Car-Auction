@@ -3,8 +3,6 @@ package edu.lpnu.auction.dto;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 
-import java.time.LocalDate;
-
 /**
  * DTO for {@link edu.lpnu.auction.model.User}
  */
@@ -15,10 +13,6 @@ public class RegisterRequest{
 
     @NotBlank(message = "Прізвище не може бути пустим")
     private String lastName;
-
-    @NotNull(message = "Дата народження не може бути пуста")
-    @Past(message = "Дата народження повинна бути в минулому")
-    private LocalDate birthDate;
 
     @Email(message = "Невірний формат email")
     @NotBlank(message = "Email не може бути пустим")

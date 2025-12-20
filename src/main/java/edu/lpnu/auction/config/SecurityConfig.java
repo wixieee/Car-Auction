@@ -1,6 +1,7 @@
 package edu.lpnu.auction.config;
 
 import edu.lpnu.auction.utils.security.JWTAuthFilter;
+import edu.lpnu.auction.utils.security.OAuth2LoginSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,6 +22,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final JWTAuthFilter jwtAuthFilter;
+    private final OAuth2LoginSuccessHandler successHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -33,6 +35,10 @@ public class SecurityConfig {
                         .requestMatchers( "/actuator/health", "/error","/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
                         .anyRequest().authenticated()
+                )
+
+                .oauth2Login(oauth2 -> oauth2
+                        .successHandler(successHandler)
                 )
 
         .headers(headers -> headers

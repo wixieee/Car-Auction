@@ -3,7 +3,17 @@ spring:
     name: Car Auction
   profiles:
     active: dev
-
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            clientId: ${GOOGLE_OAUTH_ID}
+            clientSecret: ${GOOGLE_OAUTH_SECRET}
+            scope:
+              - openid
+              - profile
+              - email
 
 server:
   servlet:

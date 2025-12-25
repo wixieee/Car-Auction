@@ -19,6 +19,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
 
@@ -32,6 +33,7 @@ public class AuthService {
     private final JWTUtils jwtUtils;
     private final AuthenticationManager authenticationManager;
 
+    @Transactional
     public String register(RegisterRequest registerRequest) {
          if(userRepository.existsByEmail(registerRequest.getEmail())) {
              throw new AlreadyExistsException("Користувач з таким email уже існує");
@@ -50,6 +52,7 @@ public class AuthService {
         return generateToken(registerRequest.getEmail());
     }
 
+    @Transactional
     public String login(LoginRequest loginRequest) {
         User user = userRepository.findByEmail(loginRequest.getEmail())
                         .orElseThrow(() -> new NotFoundException("Користувача не знайдено"));

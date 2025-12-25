@@ -11,4 +11,9 @@ public class AbstractWebException extends RuntimeException {
         super(message);
         this.status = status;
     }
+
+    public AbstractWebException(String message, Throwable cause, HttpStatus status) {
+        super(message, cause);
+        this.status = status;
+    }
 }

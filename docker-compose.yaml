@@ -24,6 +24,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    volumes:
+      - ./gcp-key.json:/app/gcp-key.json:ro
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${POSTGRES_DB}
@@ -34,5 +36,8 @@ services:
       - GOOGLE_OAUTH_ID=${GOOGLE_OAUTH_ID}
       - GOOGLE_OAUTH_SECRET=${GOOGLE_OAUTH_SECRET}
       - OAUTH_REDIRECT_URL=${OAUTH_REDIRECT_URL}
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID}
+      - GCP_KEY_LOCATION=/app/gcp-key.json
+      - GCP_BUCKET_NAME=${GCP_BUCKET_NAME}
 volumes:
   postgres_data:

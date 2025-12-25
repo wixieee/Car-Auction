@@ -12,6 +12,7 @@ import org.hibernate.proxy.HibernateProxy;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 
 @Entity
 @Table(name = "users")
@@ -19,13 +20,14 @@ import java.util.Set;
 @NoArgsConstructor
 @Getter
 @Setter
-public class User {
+public class User extends Auditable{
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     private String firstName;
     private String lastName;
+
     @Column(nullable = false, unique = true)
     private String email;
     private String password;

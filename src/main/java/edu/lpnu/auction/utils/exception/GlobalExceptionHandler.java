@@ -4,16 +4,19 @@ import edu.lpnu.auction.utils.exception.types.AbstractWebException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
@@ -24,6 +27,9 @@ import java.util.NoSuchElementException;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+
+    @Value("${spring.servlet.multipart.max-file-size}")
+    private String maxRequestSize;
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(HttpServletRequest request, MethodArgumentNotValidException e) {
@@ -49,15 +55,37 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(e.getStatus(), e.getMessage(), request.getRequestURI());
     }
 
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleMaxUploadSizeExceededException(HttpServletRequest request,
+                                                                              MaxUploadSizeExceededException e) {
+        String message = String.format("Файл занадто великий. Максимально допустимий розмір запиту: %s", maxRequestSize);
+
+        return buildErrorResponse(HttpStatus.PAYLOAD_TOO_LARGE, message, request.getRequestURI());
+    }
+
     @ExceptionHandler({
             BadCredentialsException.class,
             IllegalArgumentException.class,
             HttpMessageNotReadableException.class,
-            HttpRequestMethodNotSupportedException.class,
             MethodArgumentTypeMismatchException.class
     })
     public ResponseEntity<ErrorResponse> handleBadRequestGroup(HttpServletRequest request, Exception e) {
-        return buildErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage(), request.getRequestURI());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, "Некоректний запит", request.getRequestURI());
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleHttpRequestMethodNotSupportedException(HttpServletRequest request,
+                                                                                      HttpRequestMethodNotSupportedException e) {
+        return buildErrorResponse(HttpStatus.METHOD_NOT_ALLOWED,
+                "Некоректний метод: " + e.getMethod(),
+                request.getRequestURI());
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMediaTypeNotSupported(HttpServletRequest request, HttpMediaTypeNotSupportedException e) {
+        return buildErrorResponse(HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+                "Непідтримуваний тип контенту: " + e.getContentType(),
+                request.getRequestURI());
     }
 
     @ExceptionHandler({

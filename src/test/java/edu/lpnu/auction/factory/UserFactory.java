@@ -11,7 +11,7 @@ public class UserFactory {
 
     private static User getUser(AuthProvider authProvider) {
         User user = new User();
-        user.setId(1L);
+        user.setId(TestConstants.DEFAULT_UUID);
         user.setFirstName(TestConstants.DEFAULT_FIRSTNAME);
         user.setLastName(TestConstants.DEFAULT_LASTNAME);
         user.setEmail(TestConstants.DEFAULT_EMAIL);

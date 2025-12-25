@@ -1,7 +1,7 @@
 package edu.lpnu.auction.service;
 
-import edu.lpnu.auction.dto.LoginRequest;
-import edu.lpnu.auction.dto.RegisterRequest;
+import edu.lpnu.auction.dto.request.LoginRequest;
+import edu.lpnu.auction.dto.request.RegisterRequest;
 import edu.lpnu.auction.model.User;
 import edu.lpnu.auction.model.enums.AuthProvider;
 import edu.lpnu.auction.model.enums.Role;

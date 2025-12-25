@@ -1,4 +1,4 @@
-package edu.lpnu.auction.dto;
+package edu.lpnu.auction.dto.request;
 
 import edu.lpnu.auction.model.enums.car.*;
 import edu.lpnu.auction.utils.validation.ValidCarConfiguration;

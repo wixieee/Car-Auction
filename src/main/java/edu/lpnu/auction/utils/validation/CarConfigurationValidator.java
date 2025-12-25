@@ -1,6 +1,6 @@
 package edu.lpnu.auction.utils.validation;
 
-import edu.lpnu.auction.dto.CarRequest;
+import edu.lpnu.auction.dto.request.CarRequest;
 import edu.lpnu.auction.model.enums.car.FuelType;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;

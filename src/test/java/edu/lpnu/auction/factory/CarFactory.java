@@ -1,12 +1,9 @@
 package edu.lpnu.auction.factory;
 
-import edu.lpnu.auction.dto.CarRequest;
-import edu.lpnu.auction.dto.NhtsaResponse;
-import edu.lpnu.auction.model.Car;
+import edu.lpnu.auction.dto.request.CarRequest;
+import edu.lpnu.auction.dto.response.NhtsaResponse;
 import edu.lpnu.auction.model.enums.car.ChargingPortType;
 import edu.lpnu.auction.model.enums.car.FuelType;
-
-import java.util.ArrayList;
 
 public class CarFactory {
 
@@ -124,28 +121,5 @@ public class CarFactory {
         CarRequest carRequest = new CarRequest();
         carRequest.setVin(TestConstants.DEFAULT_VIN);
         return carRequest;
-    }
-
-    public static Car getCarAfterMapper() {
-        Car car = new Car();
-        car.setVin(TestConstants.DEFAULT_VIN);
-        car.setMake(TestConstants.DEFAULT_MAKE);
-        car.setModel(TestConstants.DEFAULT_MODEL);
-        car.setYear(TestConstants.DEFAULT_YEAR);
-        car.setTrim(TestConstants.DEFAULT_TRIM);
-        car.setBodyType(TestConstants.DEFAULT_BODY_TYPE);
-        car.setTransmission(TestConstants.DEFAULT_TRANSMISSION);
-        car.setDriveType(TestConstants.DEFAULT_DRIVE_TYPE);
-        car.setMileage(TestConstants.DEFAULT_MILEAGE);
-        car.setDescription(TestConstants.DEFAULT_DESCRIPTION);
-        car.setColor(TestConstants.DEFAULT_COLOR);
-        car.setCondition(TestConstants.DEFAULT_CONDITION);
-        car.setHorsePower(TestConstants.DEFAULT_HORSE_POWER);
-        car.setFuelType(TestConstants.DEFAULT_FUEL_TYPE);
-        car.setEngineVolume(TestConstants.DEFAULT_ENGINE_VOLUME);
-        car.setCylinderCount(TestConstants.DEFAULT_CYLINDERS);
-
-        car.setImageUrls(new ArrayList<>());
-        return car;
     }
 }

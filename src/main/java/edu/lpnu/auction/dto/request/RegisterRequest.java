@@ -1,4 +1,4 @@
-package edu.lpnu.auction.dto;
+package edu.lpnu.auction.dto.request;
 
 import jakarta.validation.constraints.*;
 import lombok.Data;

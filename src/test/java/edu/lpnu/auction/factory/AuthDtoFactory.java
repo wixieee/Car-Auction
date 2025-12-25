@@ -1,7 +1,7 @@
 package edu.lpnu.auction.factory;
 
-import edu.lpnu.auction.dto.LoginRequest;
-import edu.lpnu.auction.dto.RegisterRequest;
+import edu.lpnu.auction.dto.request.LoginRequest;
+import edu.lpnu.auction.dto.request.RegisterRequest;
 
 public class AuthDtoFactory {
 

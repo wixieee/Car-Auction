@@ -20,11 +20,7 @@ public class Car extends Auditable {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "seller_id", nullable = false)
-    private User seller;
-
-    @Column(nullable = false, unique = true, length = 17)
+    @Column(nullable = false, length = 17)
     private String vin;
 
     @Column(nullable = false)

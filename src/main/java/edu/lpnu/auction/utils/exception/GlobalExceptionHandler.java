@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
@@ -67,7 +68,8 @@ public class GlobalExceptionHandler {
             BadCredentialsException.class,
             IllegalArgumentException.class,
             HttpMessageNotReadableException.class,
-            MethodArgumentTypeMismatchException.class
+            MethodArgumentTypeMismatchException.class,
+            MissingServletRequestPartException.class
     })
     public ResponseEntity<ErrorResponse> handleBadRequestGroup(HttpServletRequest request, Exception e) {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, "Некоректний запит", request.getRequestURI());

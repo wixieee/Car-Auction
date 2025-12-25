@@ -1,4 +1,4 @@
-package edu.lpnu.auction.dto;
+package edu.lpnu.auction.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;

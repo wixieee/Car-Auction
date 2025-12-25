@@ -1,7 +1,7 @@
 package edu.lpnu.auction.controller;
 
-import edu.lpnu.auction.dto.LoginRequest;
-import edu.lpnu.auction.dto.RegisterRequest;
+import edu.lpnu.auction.dto.request.LoginRequest;
+import edu.lpnu.auction.dto.request.RegisterRequest;
 import edu.lpnu.auction.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

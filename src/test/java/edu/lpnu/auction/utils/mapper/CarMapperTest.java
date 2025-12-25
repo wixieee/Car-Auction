@@ -1,7 +1,7 @@
 package edu.lpnu.auction.utils.mapper;
 
-import edu.lpnu.auction.dto.CarRequest;
-import edu.lpnu.auction.dto.NhtsaResponse;
+import edu.lpnu.auction.dto.request.CarRequest;
+import edu.lpnu.auction.dto.response.NhtsaResponse;
 import edu.lpnu.auction.factory.CarFactory;
 import edu.lpnu.auction.factory.TestConstants;
 import edu.lpnu.auction.model.Car;

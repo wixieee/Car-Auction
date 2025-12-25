@@ -1,6 +1,6 @@
 package edu.lpnu.auction.service;
 
-import edu.lpnu.auction.dto.NhtsaResponse;
+import edu.lpnu.auction.dto.response.NhtsaResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;

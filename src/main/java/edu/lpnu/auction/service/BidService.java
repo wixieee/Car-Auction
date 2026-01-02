@@ -102,7 +102,7 @@ public class BidService {
     private String maskName(User user) {
         if (user.getFirstName() == null) return "User";
         String lastInitial = (user.getLastName() != null && !user.getLastName().isEmpty())
-                ? user.getLastName().substring(0, 1) + "."
+                ? user.getLastName().charAt(0) + "."
                 : "";
         return user.getFirstName() + " " + lastInitial;
     }

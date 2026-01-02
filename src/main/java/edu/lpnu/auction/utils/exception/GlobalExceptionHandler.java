@@ -58,15 +58,14 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(OptimisticLockingFailureException.class)
-    public ResponseEntity<ErrorResponse> handleOptimisticLockingFailure(HttpServletRequest request, OptimisticLockingFailureException e) {
+    public ResponseEntity<ErrorResponse> handleOptimisticLockingFailure(HttpServletRequest request) {
         return buildErrorResponse(HttpStatus.CONFLICT,
                 "Ціна лоту змінилась. Будь ласка, оновіть дані та спробуйте ще раз",
                 request.getRequestURI());
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
-    public ResponseEntity<ErrorResponse> handleMaxUploadSizeExceededException(HttpServletRequest request,
-                                                                              MaxUploadSizeExceededException e) {
+    public ResponseEntity<ErrorResponse> handleMaxUploadSizeExceededException(HttpServletRequest request) {
         String message = String.format("Файл занадто великий. Максимально допустимий розмір запиту: %s", maxRequestSize);
 
         return buildErrorResponse(HttpStatus.PAYLOAD_TOO_LARGE, message, request.getRequestURI());
@@ -79,7 +78,7 @@ public class GlobalExceptionHandler {
             MethodArgumentTypeMismatchException.class,
             MissingServletRequestPartException.class
     })
-    public ResponseEntity<ErrorResponse> handleBadRequestGroup(HttpServletRequest request, Exception e) {
+    public ResponseEntity<ErrorResponse> handleBadRequestGroup(HttpServletRequest request) {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, "Некоректний запит", request.getRequestURI());
     }
 
@@ -103,12 +102,12 @@ public class GlobalExceptionHandler {
             NoSuchElementException.class,
             NoResourceFoundException.class
     })
-    public ResponseEntity<ErrorResponse> handleNotFoundGroup(HttpServletRequest request, Exception e) {
+    public ResponseEntity<ErrorResponse> handleNotFoundGroup(HttpServletRequest request) {
         return buildErrorResponse(HttpStatus.NOT_FOUND, "Ресурс не знайдено", request.getRequestURI());
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErrorResponse> handleAccessDenied(HttpServletRequest request, AccessDeniedException e) {
+    public ResponseEntity<ErrorResponse> handleAccessDenied(HttpServletRequest request) {
         return buildErrorResponse(HttpStatus.FORBIDDEN, "Доступ заборонено", request.getRequestURI());
     }
 

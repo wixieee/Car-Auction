@@ -5,6 +5,7 @@ public enum LotStatus {
     APPROVED,
     ACTIVE,
     SOLD,
+    PAID,
     UNSOLD,
     REJECTED
 }

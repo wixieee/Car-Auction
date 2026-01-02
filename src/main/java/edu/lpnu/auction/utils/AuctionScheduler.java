@@ -3,6 +3,7 @@ package edu.lpnu.auction.utils;
 import edu.lpnu.auction.model.Lot;
 import edu.lpnu.auction.model.enums.LotStatus;
 import edu.lpnu.auction.repository.LotRepository;
+import edu.lpnu.auction.service.WalletService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,8 +18,9 @@ import java.util.List;
 @Slf4j
 public class AuctionScheduler {
     private final LotRepository lotRepository;
+    private final WalletService walletService;
 
-    @Scheduled(fixedRate = 30000)
+    @Scheduled(fixedRate = 5000)
     @Transactional
     public void checkAuctionStatus() {
         LocalDateTime now = LocalDateTime.now();
@@ -66,6 +68,15 @@ public class AuctionScheduler {
                 log.info("Лот ID: {} SOLD! Вартість: {}", lot.getId(), lot.getCurrentPrice());
             } else {
                 lot.setStatus(LotStatus.UNSOLD);
+
+                if (lot.getCurrentHighBidder() != null) {
+                    walletService.unfreezeDeposit(
+                            lot.getCurrentHighBidder(),
+                            lot.getCurrentPrice()
+                    );
+                    log.info("Депозит повернено користувачу {}", lot.getCurrentHighBidder().getId());
+                }
+
                 log.info("Лот ID: {} завершено як UNSOLD (Недосягнуто резерв: {} < {})",
                         lot.getId(), lot.getCurrentPrice(), lot.getReservePrice());
             }

@@ -3,9 +3,12 @@ package edu.lpnu.auction.factory;
 import edu.lpnu.auction.model.User;
 import edu.lpnu.auction.model.enums.AuthProvider;
 import edu.lpnu.auction.model.enums.Role;
+import edu.lpnu.auction.repository.UserRepository;
 
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.UUID;
 
 public class UserFactory {
 
@@ -36,5 +39,17 @@ public class UserFactory {
         user.setFirstName(TestConstants.DEFAULT_FIRSTNAME);
         user.setLastName(TestConstants.DEFAULT_LASTNAME);
         return user;
+    }
+
+    public static User createPersistedUser(UserRepository repository, String emailPrefix, BigDecimal balance) {
+        User user = getLocalUser();
+        user.setId(null);
+
+        user.setEmail(emailPrefix + "_" + UUID.randomUUID().toString().substring(0, 5) + "@test.com");
+
+        user.setBalance(balance);
+        user.setFrozenBalance(BigDecimal.ZERO);
+
+        return repository.save(user);
     }
 }

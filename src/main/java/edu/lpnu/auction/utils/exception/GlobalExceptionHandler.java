@@ -5,6 +5,7 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -54,6 +55,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AbstractWebException.class)
     public ResponseEntity<ErrorResponse> handleWebException(HttpServletRequest request, AbstractWebException e) {
         return buildErrorResponse(e.getStatus(), e.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    public ResponseEntity<ErrorResponse> handleOptimisticLockingFailure(HttpServletRequest request, OptimisticLockingFailureException e) {
+        return buildErrorResponse(HttpStatus.CONFLICT,
+                "Ціна лоту змінилась. Будь ласка, оновіть дані та спробуйте ще раз",
+                request.getRequestURI());
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)

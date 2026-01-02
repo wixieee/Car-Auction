@@ -8,6 +8,7 @@ import edu.lpnu.auction.model.Lot;
 import edu.lpnu.auction.model.User;
 import edu.lpnu.auction.model.enums.LotStatus;
 import edu.lpnu.auction.repository.LotRepository;
+import edu.lpnu.auction.utils.exception.types.BadRequestException;
 import edu.lpnu.auction.utils.exception.types.InternalServerError;
 import edu.lpnu.auction.utils.exception.types.NotFoundException;
 import edu.lpnu.auction.utils.mapper.LotMapper;
@@ -26,6 +27,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class LotService {
     private final LotRepository lotRepository;
+    private final WalletService walletService;
     private final ImageService imageService;
     private final CarService carService;
     private final LotMapper lotMapper;
@@ -84,6 +86,30 @@ public class LotService {
 
         lot.setStatus(LotStatus.REJECTED);
         return lotMapper.toDto(lotRepository.save(lot));
+    }
+
+    @Transactional
+    public LotResponse payForLot(UUID lotId, User payer) {
+        Lot lot = lotRepository.findById(lotId)
+                .orElseThrow(() -> new NotFoundException("Лот не знайдено"));
+
+        if (lot.getStatus() != LotStatus.SOLD) {
+            throw new BadRequestException("Цей лот не готовий до оплати");
+        }
+
+        if (!lot.getCurrentHighBidder().getId().equals(payer.getId())) {
+            throw new BadRequestException("Тільки переможець аукціону може оплатити лот");
+        }
+
+        walletService.transferFunds(
+                payer,
+                lot.getSeller().getId(),
+                lot.getCurrentPrice()
+        );
+
+        lot.setStatus(LotStatus.PAID);
+        Lot savedLot = lotRepository.save(lot);
+        return lotMapper.toDto(savedLot);
     }
 
     private Lot findById(UUID id) {

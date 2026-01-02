@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.proxy.HibernateProxy;
 
+import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -45,8 +46,17 @@ public class User extends Auditable{
     private AuthProvider provider;
     private String providerId;
 
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal balance = BigDecimal.ZERO;
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal frozenBalance = BigDecimal.ZERO;
+
     public void addRole(Role role){
         this.roles.add(role);
+    }
+
+    public BigDecimal getAvailableBalance(){
+        return balance.subtract(frozenBalance);
     }
 
     @Override

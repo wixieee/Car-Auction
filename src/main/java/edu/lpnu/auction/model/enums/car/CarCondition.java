@@ -1,5 +1,8 @@
 package edu.lpnu.auction.model.enums.car;
 
+import lombok.Getter;
+
+@Getter
 public enum CarCondition {
     NEW("Новий"),
 
@@ -15,6 +18,9 @@ public enum CarCondition {
 
     REBUILT("Відновлений");
 
+    private final String ukrainianLabel;
+
     CarCondition(String ukrainianLabel) {
+        this.ukrainianLabel = ukrainianLabel;
     }
 }

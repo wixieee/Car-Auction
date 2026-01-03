@@ -3,6 +3,7 @@ package edu.lpnu.auction.dto.request;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+import lombok.ToString;
 
 /**
  * DTO for {@link edu.lpnu.auction.model.User}
@@ -14,5 +15,6 @@ public class LoginRequest {
     private String email;
 
     @NotBlank(message = "Пароль не може бути пустим")
+    @ToString.Exclude
     private String password;
 }

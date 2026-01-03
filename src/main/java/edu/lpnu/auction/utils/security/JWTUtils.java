@@ -19,10 +19,10 @@ import java.util.Date;
 @Component
 public class JWTUtils {
 
-    @Value("${JWT_SECRET}")
+    @Value("${application.security.jwt.secret-key}")
     private String jwtSecret;
 
-    @Value("${JWT_EXPIRATION}")
+    @Value("${application.security.jwt.expiration}")
     private int jwtExpirationMs;
 
     private SecretKey signingKey;

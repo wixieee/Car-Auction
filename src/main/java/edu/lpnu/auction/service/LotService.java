@@ -2,12 +2,14 @@ package edu.lpnu.auction.service;
 
 import edu.lpnu.auction.dto.request.CreateLotRequest;
 import edu.lpnu.auction.dto.request.LotApproveRequest;
+import edu.lpnu.auction.dto.request.LotFilterRequest;
 import edu.lpnu.auction.dto.response.LotResponse;
 import edu.lpnu.auction.model.Car;
 import edu.lpnu.auction.model.Lot;
 import edu.lpnu.auction.model.User;
 import edu.lpnu.auction.model.enums.LotStatus;
 import edu.lpnu.auction.repository.LotRepository;
+import edu.lpnu.auction.utils.LotSpecification;
 import edu.lpnu.auction.utils.exception.types.BadRequestException;
 import edu.lpnu.auction.utils.exception.types.InternalServerError;
 import edu.lpnu.auction.utils.exception.types.NotFoundException;
@@ -15,6 +17,7 @@ import edu.lpnu.auction.utils.mapper.LotMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -90,8 +93,7 @@ public class LotService {
 
     @Transactional
     public LotResponse payForLot(UUID lotId, User payer) {
-        Lot lot = lotRepository.findById(lotId)
-                .orElseThrow(() -> new NotFoundException("Лот не знайдено"));
+        Lot lot = findById(lotId);
 
         if (lot.getStatus() != LotStatus.SOLD) {
             throw new BadRequestException("Цей лот не готовий до оплати");
@@ -110,6 +112,42 @@ public class LotService {
         lot.setStatus(LotStatus.PAID);
         Lot savedLot = lotRepository.save(lot);
         return lotMapper.toDto(savedLot);
+    }
+
+    public Page<LotResponse> getAllActiveLots(Pageable pageable, LotFilterRequest lotFilterRequest) {
+        Specification<Lot> specification = LotSpecification.getSpec(lotFilterRequest);
+        Page<Lot> page = lotRepository.findAll(specification, pageable);
+        return page.map(lotMapper::toDto);
+    }
+
+    public LotResponse getLotById(UUID id) {
+        return lotMapper.toDto(findById(id));
+    }
+
+    public Page<LotResponse> getUserLots(User user, Pageable pageable) {
+        return lotRepository.findAllBySellerId(user.getId(), pageable)
+                .map(lotMapper::toDto);
+    }
+
+    public Page<LotResponse> getUserBiddedLots(User user, Pageable pageable) {
+        return lotRepository.findLotsByBidder(user.getId(), pageable)
+                .map(lotMapper::toDto);
+    }
+
+    @Transactional
+    public void cancelLot(UUID lotId, User user) {
+        Lot lot = findById(lotId);
+
+        if (!lot.getSeller().getId().equals(user.getId())) {
+            throw new BadRequestException("Ви не можете керувати чужим лотом");
+        }
+
+        if (lot.getStatus() != LotStatus.PENDING_REVIEW && lot.getStatus() != LotStatus.APPROVED) {
+            throw new BadRequestException("Лот не можна скасувати на цьому етапі (він вже активний або завершений)");
+        }
+
+        lot.setStatus(LotStatus.CANCELED);
+        lotRepository.save(lot);
     }
 
     private Lot findById(UUID id) {

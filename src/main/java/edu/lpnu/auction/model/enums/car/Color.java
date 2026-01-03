@@ -1,5 +1,8 @@
 package edu.lpnu.auction.model.enums.car;
 
+import lombok.Getter;
+
+@Getter
 public enum Color {
     WHITE("Білий"),
 
@@ -27,6 +30,9 @@ public enum Color {
 
     OTHER("Інше");
 
+    private final String ukrainianLabel;
+
     Color(String ukrainianLabel) {
+        this.ukrainianLabel = ukrainianLabel;
     }
 }

@@ -1,13 +1,20 @@
 package edu.lpnu.auction.service;
 
-import edu.lpnu.auction.dto.request.CashRequest;
+import edu.lpnu.auction.dto.request.TransactionRequest;
+import edu.lpnu.auction.dto.response.TransactionResponse;
 import edu.lpnu.auction.dto.websocket.BalanceUpdateDto;
+import edu.lpnu.auction.model.Transaction;
 import edu.lpnu.auction.model.User;
+import edu.lpnu.auction.model.enums.TransactionType;
+import edu.lpnu.auction.repository.TransactionRepository;
 import edu.lpnu.auction.repository.UserRepository;
 import edu.lpnu.auction.utils.exception.types.BadRequestException;
 import edu.lpnu.auction.utils.exception.types.NotFoundException;
+import edu.lpnu.auction.utils.mapper.TransactionMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +26,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class WalletService {
+    private final TransactionMapper transactionMapper;
     private final UserRepository userRepository;
+    private final TransactionRepository transactionRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
     private static final BigDecimal DEPOSIT_PERCENTAGE = new BigDecimal("0.10");
@@ -51,10 +60,27 @@ public class WalletService {
     }
 
     @Transactional
-    public void topUpBalance(User user, CashRequest amount) {
-        user.setBalance(user.getBalance().add(amount.getAmount()));
-        User savedUser = userRepository.save(user);
-        notifyBalanceUpdate(savedUser);
+    public void topUpBalance(User user, TransactionRequest request) {
+        user.setBalance(user.getBalance().add(request.getAmount()));
+        userRepository.save(user);
+
+        saveTransaction(user, request.getAmount(), TransactionType.DEPOSIT, maskCardNumber(request.getCard().getCardNumber()));
+
+        notifyBalanceUpdate(user);
+    }
+
+    @Transactional
+    public void withdrawBalance(User user, TransactionRequest request) {
+        if (user.getAvailableBalance().compareTo(request.getAmount()) < 0) {
+            throw new BadRequestException("Недостатньо доступних коштів для виводу");
+        }
+
+        user.setBalance(user.getBalance().subtract(request.getAmount()));
+        userRepository.save(user);
+
+        saveTransaction(user, request.getAmount(), TransactionType.WITHDRAWAL, maskCardNumber(request.getCard().getCardNumber()));
+
+        notifyBalanceUpdate(user);
     }
 
     @Transactional
@@ -80,8 +106,16 @@ public class WalletService {
         User savedBuyer = userRepository.save(buyer);
         User savedSeller = userRepository.save(seller);
 
+        saveTransaction(buyer, amount, TransactionType.PAYMENT, "Internal Wallet");
+        saveTransaction(seller, amount, TransactionType.DEPOSIT, "Internal Wallet");
+
         notifyBalanceUpdate(savedBuyer);
         notifyBalanceUpdate(savedSeller);
+    }
+
+    public Page<TransactionResponse> getUserTransactions(User user, Pageable pageable) {
+        return transactionRepository.findAllByUserId(user.getId(), pageable)
+                .map(transactionMapper::toDto);
     }
 
     private void haveEnoughMoney(User user, BigDecimal amount) {
@@ -107,5 +141,23 @@ public class WalletService {
         } catch (Exception e) {
             log.error("Помилка відправлення оновлень користувачу {}", user.getEmail(), e);
         }
+    }
+
+    private void saveTransaction(User user, BigDecimal amount, TransactionType type, String paymentMethod) {
+        Transaction transaction = Transaction.builder()
+                .user(user)
+                .amount(amount)
+                .type(type)
+                .paymentMethod(paymentMethod)
+                .build();
+
+        transactionRepository.save(transaction);
+    }
+
+    private String maskCardNumber(String cardNum) {
+        if (cardNum == null || cardNum.length() <= 4) {
+            return cardNum;
+        }
+        return "**** " + cardNum.substring(cardNum.length() - 4);
     }
 }

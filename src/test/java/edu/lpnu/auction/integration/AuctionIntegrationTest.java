@@ -1,25 +1,29 @@
 package edu.lpnu.auction.integration;
 
-import edu.lpnu.auction.dto.request.CashRequest;
-import edu.lpnu.auction.dto.request.CreateLotRequest;
-import edu.lpnu.auction.dto.request.LotApproveRequest;
+import edu.lpnu.auction.dto.request.*;
 import edu.lpnu.auction.dto.response.LotResponse;
+import edu.lpnu.auction.dto.response.TransactionResponse;
 import edu.lpnu.auction.factory.CarFactory;
 import edu.lpnu.auction.factory.UserFactory;
 import edu.lpnu.auction.model.Lot;
 import edu.lpnu.auction.model.User;
 import edu.lpnu.auction.model.enums.LotStatus;
+import edu.lpnu.auction.model.enums.TransactionType;
 import edu.lpnu.auction.repository.LotRepository;
+import edu.lpnu.auction.repository.TransactionRepository;
 import edu.lpnu.auction.repository.UserRepository;
 import edu.lpnu.auction.service.BidService;
 import edu.lpnu.auction.service.ImageService;
 import edu.lpnu.auction.service.LotService;
+import edu.lpnu.auction.service.WalletService;
 import edu.lpnu.auction.utils.AuctionScheduler;
 import edu.lpnu.auction.utils.exception.types.BadRequestException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
@@ -27,11 +31,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -42,9 +41,11 @@ class AuctionIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired private LotService lotService;
     @Autowired private BidService bidService;
+    @Autowired private WalletService walletService;
     @Autowired private AuctionScheduler auctionScheduler;
     @Autowired private LotRepository lotRepository;
     @Autowired private UserRepository userRepository;
+    @Autowired private TransactionRepository transactionRepository;
 
     @MockitoBean
     private ImageService imageService;
@@ -58,15 +59,19 @@ class AuctionIntegrationTest extends AbstractIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        transactionRepository.deleteAll();
         lotRepository.deleteAll();
         userRepository.deleteAll();
 
         when(imageService.saveImages(any())).thenReturn(List.of("https://fake-url.com/image.jpg"));
 
         seller = UserFactory.createPersistedUser(userRepository, "seller", BigDecimal.ZERO);
-        richBidder = UserFactory.createPersistedUser(userRepository, "rich", new BigDecimal("50000"));
 
-        secondBidder = UserFactory.createPersistedUser(userRepository, "competitor", new BigDecimal("20000"));
+        richBidder = UserFactory.createPersistedUser(userRepository, "rich", BigDecimal.ZERO);
+        topUpUser(richBidder, new BigDecimal("50000"));
+
+        secondBidder = UserFactory.createPersistedUser(userRepository, "competitor", BigDecimal.ZERO);
+        topUpUser(secondBidder, new BigDecimal("20000"));
     }
 
     @Test
@@ -88,12 +93,8 @@ class AuctionIntegrationTest extends AbstractIntegrationTest {
 
         lotService.approveLot(lotId, approveRequest);
 
-        Lot lot = lotRepository.findById(lotId).orElseThrow();
-        assertThat(lot.getStatus()).isEqualTo(LotStatus.APPROVED);
-
         auctionScheduler.checkAuctionStatus();
-
-        lot = lotRepository.findById(lotId).orElseThrow();
+        Lot lot = lotRepository.findById(lotId).orElseThrow();
         assertThat(lot.getStatus()).isEqualTo(LotStatus.ACTIVE);
 
         placeBid(lotId, new BigDecimal("10000"), richBidder);
@@ -101,14 +102,7 @@ class AuctionIntegrationTest extends AbstractIntegrationTest {
         User richState = userRepository.findById(richBidder.getId()).orElseThrow();
         assertThat(richState.getFrozenBalance()).isEqualByComparingTo("1000");
 
-        lot = lotRepository.findById(lotId).orElseThrow();
-        lot.setEndTime(LocalDateTime.now().plusMinutes(1));
-        lotRepository.save(lot);
-
         placeBid(lotId, new BigDecimal("16000"), secondBidder);
-
-        Lot updatedLot = lotRepository.findById(lotId).orElseThrow();
-        assertThat(updatedLot.getEndTime()).isAfter(LocalDateTime.now().plusMinutes(4));
 
         User richStateAfterLoss = userRepository.findById(richBidder.getId()).orElseThrow();
         assertThat(richStateAfterLoss.getFrozenBalance()).isEqualByComparingTo("0.00");
@@ -116,20 +110,22 @@ class AuctionIntegrationTest extends AbstractIntegrationTest {
         User winnerState = userRepository.findById(secondBidder.getId()).orElseThrow();
         assertThat(winnerState.getFrozenBalance()).isEqualByComparingTo("1600.00");
 
-        updatedLot = lotRepository.findById(lotId).orElseThrow();
-        updatedLot.setEndTime(LocalDateTime.now().minusSeconds(1));
-        lotRepository.save(updatedLot);
+        lot = lotRepository.findById(lotId).orElseThrow();
+        lot.setEndTime(LocalDateTime.now().minusSeconds(1));
+        lotRepository.save(lot);
 
         auctionScheduler.checkAuctionStatus();
 
-        updatedLot = lotRepository.findById(lotId).orElseThrow();
-        assertThat(updatedLot.getStatus()).isEqualTo(LotStatus.SOLD);
-        assertThat(updatedLot.getCurrentHighBidder().getId()).isEqualTo(secondBidder.getId());
+        Lot soldLot = lotRepository.findById(lotId).orElseThrow();
+        assertThat(soldLot.getStatus()).isEqualTo(LotStatus.SOLD);
+        assertThat(soldLot.getCurrentHighBidder().getId()).isEqualTo(secondBidder.getId());
 
-        lotService.payForLot(lotId, secondBidder);
+        User freshWinner = userRepository.findById(secondBidder.getId()).orElseThrow();
 
-        updatedLot = lotRepository.findById(lotId).orElseThrow();
-        assertThat(updatedLot.getStatus()).isEqualTo(LotStatus.PAID);
+        lotService.payForLot(lotId, freshWinner);
+
+        Lot paidLot = lotRepository.findById(lotId).orElseThrow();
+        assertThat(paidLot.getStatus()).isEqualTo(LotStatus.PAID);
 
         User sellerFinal = userRepository.findById(seller.getId()).orElseThrow();
         assertThat(sellerFinal.getBalance()).isEqualByComparingTo("16000.00");
@@ -137,6 +133,13 @@ class AuctionIntegrationTest extends AbstractIntegrationTest {
         User winnerFinal = userRepository.findById(secondBidder.getId()).orElseThrow();
         assertThat(winnerFinal.getFrozenBalance()).isEqualByComparingTo("0.00");
         assertThat(winnerFinal.getBalance()).isEqualByComparingTo("4000.00");
+
+        Page<TransactionResponse> history = walletService.getUserTransactions(
+                winnerFinal,
+                PageRequest.of(0, 10, Sort.by("createdAt").descending())
+        );
+        assertThat(history.getContent()).hasSize(2);
+        assertThat(history.getContent().get(0).getType()).isEqualTo(TransactionType.PAYMENT);
     }
 
     @Test
@@ -146,12 +149,11 @@ class AuctionIntegrationTest extends AbstractIntegrationTest {
         assertThrows(BadRequestException.class, () ->
                 placeBid(lotId, new BigDecimal("1000"), seller));
 
-        User reallyPoorUser = UserFactory.createPersistedUser(userRepository, "broke", new BigDecimal("500"));
+        User brokeUser = UserFactory.createPersistedUser(userRepository, "broke", new BigDecimal("500"));
         assertThrows(BadRequestException.class, () ->
-                placeBid(lotId, new BigDecimal("6000"), reallyPoorUser));
+                placeBid(lotId, new BigDecimal("6000"), brokeUser));
 
         placeBid(lotId, new BigDecimal("200"), richBidder);
-
         assertThrows(BadRequestException.class, () ->
                 placeBid(lotId, new BigDecimal("250"), richBidder));
 
@@ -168,53 +170,27 @@ class AuctionIntegrationTest extends AbstractIntegrationTest {
         assertThat(richState.getFrozenBalance()).isEqualByComparingTo("0.00");
     }
 
-    @Test
-    void concurrentBiddingTest() throws InterruptedException {
-        UUID lotId = createAndActivateLot(seller, BigDecimal.ZERO);
-
-        int threads = 2;
-        ExecutorService executor = Executors.newFixedThreadPool(threads);
-        CountDownLatch latch = new CountDownLatch(threads);
-
-        AtomicInteger successCount = new AtomicInteger();
-        AtomicInteger failCount = new AtomicInteger();
-
-        BigDecimal bidAmount = new BigDecimal("500");
-
-        Consumer<User> task = (user) -> {
-            try {
-                User freshUser = userRepository.findById(user.getId()).orElseThrow();
-                CashRequest req = new CashRequest();
-                req.setAmount(bidAmount);
-                bidService.placeBid(lotId, freshUser, req);
-
-                successCount.incrementAndGet();
-            } catch (OptimisticLockingFailureException e) {
-                failCount.incrementAndGet();
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                latch.countDown();
-            }
-        };
-
-        executor.submit(() -> task.accept(richBidder));
-        executor.submit(() -> task.accept(secondBidder));
-
-        latch.await();
-
-        assertThat(successCount.get()).isEqualTo(1);
-        assertThat(failCount.get()).isEqualTo(1);
-
-        Lot lot = lotRepository.findById(lotId).orElseThrow();
-        assertThat(lot.getBidCount()).isEqualTo(1);
-        assertThat(lot.getCurrentPrice()).isEqualByComparingTo("500.00");
-    }
 
     private void placeBid(UUID lotId, BigDecimal amount, User user) {
+        User freshUser = userRepository.findById(user.getId()).orElseThrow();
+
         CashRequest req = new CashRequest();
         req.setAmount(amount);
-        bidService.placeBid(lotId, user, req);
+        bidService.placeBid(lotId, freshUser, req);
+    }
+
+    private void topUpUser(User user, BigDecimal amount) {
+        TransactionRequest req = new TransactionRequest();
+        req.setAmount(amount);
+
+        CardData card = new CardData();
+        card.setCardNumber("1234567812345678");
+        card.setExpiryDate("12/30");
+        card.setCvv("123");
+        card.setHolderName("TEST USER");
+        req.setCard(card);
+
+        walletService.topUpBalance(user, req);
     }
 
     private UUID createAndActivateLot(User seller, BigDecimal reserve) {

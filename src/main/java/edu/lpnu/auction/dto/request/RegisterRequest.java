@@ -2,6 +2,7 @@ package edu.lpnu.auction.dto.request;
 
 import jakarta.validation.constraints.*;
 import lombok.Data;
+import lombok.ToString;
 
 /**
  * DTO for {@link edu.lpnu.auction.model.User}
@@ -20,8 +21,10 @@ public class RegisterRequest{
 
     @Size(min = 8, message = "Мінімальна довжина паролю 8 символів")
     @NotBlank(message = "Пароль не може бути пустим")
+    @ToString.Exclude
     private String password;
 
     @NotBlank(message = "Підтвердження паролю не може бути пустим")
+    @ToString.Exclude
     private String passwordConfirm;
 }

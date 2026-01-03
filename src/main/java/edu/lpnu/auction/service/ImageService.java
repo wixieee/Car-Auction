@@ -22,7 +22,7 @@ import java.util.UUID;
 public class ImageService {
     private final Storage storage;
 
-    @Value("${GCP_BUCKET_NAME}")
+    @Value("${spring.cloud.gcp.bucket.name}")
     private String bucketName;
 
     public List<String> saveImages(List<MultipartFile> files) {

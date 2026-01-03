@@ -39,5 +39,9 @@ services:
       - GCP_PROJECT_ID=${GCP_PROJECT_ID}
       - GCP_KEY_LOCATION=/app/gcp-key.json
       - GCP_BUCKET_NAME=${GCP_BUCKET_NAME}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - ADMIN_FIRSTNAME=${ADMIN_FIRSTNAME}
+      - ADMIN_LASTNAME=${ADMIN_LASTNAME}
 volumes:
   postgres_data:

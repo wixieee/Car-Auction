@@ -27,6 +27,10 @@ public abstract class AbstractIntegrationTest {
         registry.add("JWT_EXPIRATION", () -> "3600000");
         registry.add("OAUTH_REDIRECT_URL", () -> "http://localhost:3000/oauth2/redirect");
         registry.add("GOOGLE_CLIENT_ID", () -> "dummy");
+        registry.add("ADMIN_EMAIL", () -> "admin@admin");
+        registry.add("ADMIN_PASSWORD", () -> "password");
+        registry.add("ADMIN_FIRSTNAME", () -> "admin");
+        registry.add("ADMIN_LASTNAME", () -> "admin");
         registry.add("GOOGLE_CLIENT_SECRET", () -> "dummy");
         registry.add("spring.cloud.gcp.core.enabled", () -> "false");
         registry.add("spring.cloud.gcp.storage.enabled", () -> "false");
